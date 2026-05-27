@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volume Dashboard 2019–2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg:#0a0e1a; --surface:#111827; --surface2:#1a2235; --border:#1e2d45;
+  --hyper:#00d4ff; --hyper-dim:rgba(0,212,255,0.15);
+  --mbc:#ff6b35;  --mbc-dim:rgba(255,107,53,0.15);
+  --accent:#7c3aed; --gold:#f59e0b; --text:#e2e8f0; --muted:#64748b;
+  --header-bg1:#0f1628; --header-bg2:#1a0a2e;
+  --panel-title-color:#fff; --insight-title-color:#fff;
+  --kpi-hover-border:rgba(255,255,255,0.15);
+  --share-track-bg:rgba(255,255,255,0.05);
+  --tooltip-bg:#1a2235; --tooltip-border:#1e2d45;
+  --tooltip-title:#94a3b8; --tooltip-body:#e2e8f0;
+  --chart-grid:rgba(255,255,255,0.04); --chart-tick:#64748b;
+  --range-thumb:#00d4ff; --range-track:#1e2d45; --range-fill:rgba(0,212,255,0.25);
+}
+:root.light {
+  --bg:#f0f4f8; --surface:#fff; --surface2:#e8eef5; --border:#d1dce8;
+  --hyper:#0090b8; --hyper-dim:rgba(0,144,184,0.1);
+  --mbc:#d94f1a; --mbc-dim:rgba(217,79,26,0.1);
+  --accent:#6d28d9; --gold:#d97706; --text:#1e293b; --muted:#64748b;
+  --header-bg1:#1e3a5f; --header-bg2:#2d1b6e;
+  --panel-title-color:#1e293b; --insight-title-color:#1e293b;
+  --kpi-hover-border:rgba(0,0,0,0.15); --share-track-bg:rgba(0,0,0,0.07);
+  --tooltip-bg:#fff; --tooltip-border:#d1dce8;
+  --tooltip-title:#64748b; --tooltip-body:#1e293b;
+  --chart-grid:rgba(0,0,0,0.06); --chart-tick:#94a3b8;
+  --range-thumb:#0090b8; --range-track:#d1dce8; --range-fill:rgba(0,144,184,0.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',sans-serif;min-height:100vh;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--header-bg1) 0%,var(--header-bg2) 50%,var(--header-bg1) 100%);border-bottom:1px solid var(--border);padding:24px 32px 20px;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 600px 200px at 80% 50%,rgba(124,58,237,0.12),transparent);pointer-events:none;}
+.header-inner{max-width:1440px;margin:0 auto;position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;}
+.header-eyebrow{font-size:11px;font-weight:500;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:6px;font-family:'IBM Plex Mono',monospace;}
+h1{font-size:clamp(20px,2.5vw,28px);font-weight:700;color:#fff;line-height:1.1;}
+h1 span{color:var(--hyper);}
+.header-meta{font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;}
+.last-update{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:7px 13px;font-size:11px;color:#a78bfa;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+
+/* CONTROLS */
+.controls-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;}
+.controls-inner{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:0;flex-wrap:wrap;}
+.ctrl-section{display:flex;align-items:center;gap:8px;padding:12px 16px 12px 0;border-right:1px solid var(--border);}
+.ctrl-section:last-child{border-right:none;margin-left:auto;}
+.ctrl-section:first-child{padding-left:0;}
+.ctrl-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;}
+
+/* YEAR RANGE SELECTOR */
+.range-wrap{display:flex;align-items:center;gap:10px;}
+.range-display{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;}
+.range-yr{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--hyper);min-width:46px;text-align:center;}
+.range-sep{color:var(--muted);}
+.range-slider-wrap{position:relative;width:160px;height:28px;display:flex;align-items:center;}
+.range-track-bg{position:absolute;left:0;right:0;height:4px;background:var(--range-track);border-radius:2px;}
+.range-track-fill{position:absolute;height:4px;background:linear-gradient(90deg,var(--hyper),rgba(0,212,255,0.5));border-radius:2px;pointer-events:none;}
+.range-slider-wrap input[type=range]{position:absolute;width:100%;appearance:none;-webkit-appearance:none;background:transparent;pointer-events:none;margin:0;height:28px;}
+.range-slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--range-thumb);border:2px solid var(--surface);cursor:pointer;pointer-events:all;box-shadow:0 0 6px rgba(0,212,255,0.4);}
+.range-slider-wrap input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--range-thumb);border:2px solid var(--surface);cursor:pointer;pointer-events:all;}
+
+/* PRESET BUTTONS */
+.preset-btns{display:flex;gap:4px;}
+.preset-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;transition:all 0.2s;font-weight:600;white-space:nowrap;}
+.preset-btn:hover{border-color:var(--hyper);color:var(--hyper);}
+.preset-btn.active{background:var(--hyper-dim);border-color:var(--hyper);color:var(--hyper);}
+
+/* METRIC BUTTONS */
+.metric-btns{display:flex;gap:4px;}
+.metric-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:500;}
+.metric-btn:hover{border-color:var(--gold);color:var(--gold);}
+.metric-btn.active{background:rgba(245,158,11,0.12);border-color:var(--gold);color:var(--gold);}
+
+/* THEME TOGGLE */
+.theme-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.theme-btn{background:transparent;border:none;cursor:pointer;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;color:var(--muted);transition:all 0.2s;font-family:'IBM Plex Sans Thai',sans-serif;}
+.theme-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.15);}
+
+/* NOTICE BANNER */
+.notice-banner{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:8px 14px;font-size:12px;color:#a78bfa;display:none;align-items:center;gap:8px;margin-bottom:16px;}
+.notice-banner.show{display:flex;}
+
+/* MAIN */
+.main{max-width:1440px;margin:0 auto;padding:20px 32px 48px;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.kpi-card:hover{border-color:var(--kpi-hover-border);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi-card.hyper::before{background:linear-gradient(90deg,var(--hyper),transparent);}
+.kpi-card.mbc::before{background:linear-gradient(90deg,var(--mbc),transparent);}
+.kpi-card.total::before{background:linear-gradient(90deg,var(--gold),transparent);}
+.kpi-card.ratio::before{background:linear-gradient(90deg,var(--accent),transparent);}
+.kpi-channel{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-family:'IBM Plex Mono',monospace;}
+.kpi-card.hyper .kpi-channel{color:var(--hyper);}
+.kpi-card.mbc .kpi-channel{color:var(--mbc);}
+.kpi-card.total .kpi-channel{color:var(--gold);}
+.kpi-card.ratio .kpi-channel{color:#a78bfa;}
+.kpi-label{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.kpi-value{font-size:24px;font-weight:700;line-height:1;font-family:'IBM Plex Mono',monospace;}
+.kpi-card.hyper .kpi-value{color:var(--hyper);}
+.kpi-card.mbc .kpi-value{color:var(--mbc);}
+.kpi-card.total .kpi-value{color:var(--gold);}
+.kpi-card.ratio .kpi-value{color:#c4b5fd;}
+.kpi-change{display:inline-flex;align-items:center;gap:3px;margin-top:6px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;}
+.kpi-change.up{background:rgba(34,197,94,0.12);color:#4ade80;}
+.kpi-change.down{background:rgba(239,68,68,0.12);color:#f87171;}
+.kpi-change.flat{background:rgba(100,116,139,0.12);color:var(--muted);}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
+.panel-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px;}
+.panel-title{font-size:13px;font-weight:600;color:var(--panel-title-color);}
+.panel-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.panel-badge{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.badge-blue{background:var(--hyper-dim);color:var(--hyper);border:1px solid rgba(0,212,255,0.3);}
+.badge-orange{background:var(--mbc-dim);color:var(--mbc);border:1px solid rgba(255,107,53,0.3);}
+.badge-purple{background:rgba(124,58,237,0.12);color:#a78bfa;border:1px solid rgba(124,58,237,0.3);}
+.badge-gold{background:rgba(245,158,11,0.12);color:var(--gold);border:1px solid rgba(245,158,11,0.3);}
+.badge-gray{background:rgba(100,116,139,0.12);color:var(--muted);border:1px solid rgba(100,116,139,0.2);}
+canvas{max-height:260px;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.legend-dot{width:9px;height:9px;border-radius:50%;}
+
+/* SHARE BARS */
+.share-bar-wrap{margin-top:8px;}
+.share-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.share-label{font-size:12px;color:var(--muted);width:36px;font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.share-track{flex:1;height:20px;background:var(--share-track-bg);border-radius:4px;overflow:hidden;position:relative;}
+.share-fill-h{height:100%;background:linear-gradient(90deg,var(--hyper),rgba(0,212,255,0.4));border-radius:4px 0 0 4px;transition:width 0.5s ease;}
+.share-fill-m{height:100%;background:linear-gradient(90deg,var(--mbc),rgba(255,107,53,0.4));border-radius:0 4px 4px 0;position:absolute;top:0;transition:all 0.5s ease;}
+.share-pct{font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.share-pct.h{color:var(--hyper);} .share-pct.m{color:var(--mbc);}
+
+/* INSIGHTS */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px;}
+.insight-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:3px solid var(--accent);}
+.insight-card.warn{border-left-color:var(--mbc);}
+.insight-card.good{border-left-color:#22c55e;}
+.insight-icon{font-size:16px;margin-bottom:4px;}
+.insight-title{font-size:12px;font-weight:600;color:var(--insight-title-color);margin-bottom:3px;}
+.insight-body{font-size:11px;color:var(--muted);line-height:1.6;}
+.insight-body strong{color:var(--text);}
+
+/* NO DATA */
+.no-data{display:flex;align-items:center;justify-content:center;height:120px;color:var(--muted);font-size:12px;font-style:italic;}
+
+@media(max-width:900px){
+  .chart-grid{grid-template-columns:1fr;}
+  .main{padding:14px;}
+  .controls-bar{padding:0 14px;}
+  .header{padding:18px 14px;}
+  .range-slider-wrap{width:120px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-eyebrow">Operations · Sales Volume</div>
+      <h1>Volume Dashboard <span>2019–2026</span></h1>
+      <div class="header-meta">88 เดือน · Hyper vs MBC · 3 มิติ: PU · Case · Unit Type</div>
+    </div>
+    <div class="last-update">⬤ Latest: Apr 2026</div>
+  </div>
+</div>
+
+<div class="controls-bar">
+  <div class="controls-inner">
+
+    <!-- YEAR RANGE -->
+    <div class="ctrl-section">
+      <span class="ctrl-label">ช่วงปี</span>
+      <div class="range-wrap">
+        <div class="range-display">
+          <span class="range-yr" id="labelFrom">2019</span>
+          <span class="range-sep">→</span>
+          <span class="range-yr" id="labelTo">2026</span>
+        </div>
+        <div class="range-slider-wrap" id="sliderWrap">
+          <div class="range-track-bg"></div>
+          <div class="range-track-fill" id="trackFill"></div>
+          <input type="range" id="sliderFrom" min="0" max="7" value="0" step="1">
+          <input type="range" id="sliderTo"   min="0" max="7" value="7" step="1">
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESETS -->
+    <div class="ctrl-section">
+      <span class="ctrl-label">Preset</span>
+      <div class="preset-btns">
+        <button class="preset-btn" data-from="2022" data-to="2026">4Y</button>
+        <button class="preset-btn" data-from="2023" data-to="2026">3Y</button>
+        <button class="preset-btn" data-from="2024" data-to="2026">2Y</button>
+        <button class="preset-btn" data-from="2025" data-to="2026">1Y</button>
+        <button class="preset-btn active" data-from="2019" data-to="2026">All</button>
+      </div>
+    </div>
+
+    <!-- METRIC -->
+    <div class="ctrl-section">
+      <span class="ctrl-label">มิติ</span>
+      <div class="metric-btns">
+        <button class="metric-btn active" data-metric="pu">Volume PU</button>
+        <button class="metric-btn" data-metric="case">Volume Case</button>
+        <button class="metric-btn" data-metric="unittype">Unit Type</button>
+      </div>
+    </div>
+
+    <!-- THEME -->
+    <div class="ctrl-section">
+      <div class="theme-toggle">
+        <button class="theme-btn active" id="btnDark" onclick="setTheme('dark')">🌙 Dark</button>
+        <button class="theme-btn" id="btnLight" onclick="setTheme('light')">☀️ Light</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="main">
+  <div class="notice-banner" id="noticeBanner">
+    ℹ️ <span id="noticeText"></span>
+  </div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+  <div class="chart-grid" style="grid-template-columns:1fr;margin-bottom:14px;">
+    <div class="chart-panel">
+      <div class="panel-header">
+        <div><div class="panel-title" id="trendTitle">Volume PU — Hyper vs MBC</div><div class="panel-sub" id="trendSub"></div></div>
+        <span class="panel-badge badge-blue">TREND</span>
+      </div>
+      <canvas id="trendChart"></canvas>
+      <div class="legend" id="trendLegend"></div>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-panel">
+      <div class="panel-header"><div><div class="panel-title">Channel Share %</div><div class="panel-sub">Hyper vs MBC composition</div></div><span class="panel-badge badge-orange">SHARE</span></div>
+      <canvas id="shareChart"></canvas>
+    </div>
+    <div class="chart-panel">
+      <div class="panel-header"><div><div class="panel-title">YoY Growth %</div><div class="panel-sub">Year-over-Year vs same month prior year</div></div><span class="panel-badge badge-purple">YoY</span></div>
+      <canvas id="yoyChart"></canvas>
+    </div>
+    <div class="chart-panel">
+      <div class="panel-header"><div><div class="panel-title">Annual Total — Hyper vs MBC</div><div class="panel-sub">Cumulative by year in selected range</div></div><span class="panel-badge badge-gold">ANNUAL</span></div>
+      <canvas id="annualChart"></canvas>
+    </div>
+    <div class="chart-panel">
+      <div class="panel-header"><div><div class="panel-title">Unit Type Mix</div><div class="panel-sub">Unit (PU) vs Case trend</div></div><span class="panel-badge badge-blue">MIX</span></div>
+      <canvas id="mixChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-panel" style="margin-bottom:14px;">
+    <div class="panel-header"><div><div class="panel-title">Channel Share by Year — Hyper vs MBC</div><div class="panel-sub">% Volume PU split (years with Hyper/MBC data only)</div></div><span class="panel-badge badge-orange">SPLIT</span></div>
+    <div class="share-bar-wrap" id="shareBars"></div>
+  </div>
+  <div class="insights-grid" id="insightsGrid"></div>
+</div>
+
+<script>
+const ALL_YEARS = [2019,2020,2021,2022,2023,2024,2025,2026];
+const RAW = [{"month":"2019-01","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1587614.0,"vol_case":15977463.0},{"month":"2019-02","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1507372.0,"vol_case":14264328.0},{"month":"2019-03","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1870795.0,"vol_case":15875245.0},{"month":"2019-04","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1781233.0,"vol_case":16361217.0},{"month":"2019-05","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1883963.0,"vol_case":16957456.0},{"month":"2019-06","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1621045.0,"vol_case":15712305.0},{"month":"2019-07","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1836219.0,"vol_case":16434087.0},{"month":"2019-08","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2058898.0,"vol_case":16844783.0},{"month":"2019-09","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1680104.0,"vol_case":15921455.0},{"month":"2019-10","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1555220.0,"vol_case":16585525.0},{"month":"2019-11","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1706745.0,"vol_case":16494540.0},{"month":"2019-12","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2015602.0,"vol_case":18800786.0},{"month":"2020-01","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1832759.0,"vol_case":17524642.0},{"month":"2020-02","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1521682.0,"vol_case":15090367.0},{"month":"2020-03","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1984640.0,"vol_case":18436989.0},{"month":"2020-04","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2066166.0,"vol_case":16752351.0},{"month":"2020-05","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1682288.0,"vol_case":17417815.0},{"month":"2020-06","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1455866.0,"vol_case":15569956.0},{"month":"2020-07","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1694314.0,"vol_case":16710308.0},{"month":"2020-08","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1777546.0,"vol_case":16328394.0},{"month":"2020-09","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1620500.0,"vol_case":15351122.0},{"month":"2020-10","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1518170.0,"vol_case":17535670.0},{"month":"2020-11","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1667499.0,"vol_case":14266712.0},{"month":"2020-12","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2112937.0,"vol_case":16336032.0},{"month":"2021-01","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1848778.0,"vol_case":15178357.0},{"month":"2021-02","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1308000.0,"vol_case":12886272.0},{"month":"2021-03","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1465620.0,"vol_case":13486069.0},{"month":"2021-04","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1638854.0,"vol_case":14215948.0},{"month":"2021-05","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1986434.0,"vol_case":15383400.0},{"month":"2021-06","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2048019.0,"vol_case":15552590.0},{"month":"2021-07","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2350162.0,"vol_case":17002053.0},{"month":"2021-08","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2461179.0,"vol_case":15052116.0},{"month":"2021-09","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1944458.0,"vol_case":14934441.0},{"month":"2021-10","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1844650.0,"vol_case":14935031.0},{"month":"2021-11","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":1713594.0,"vol_case":13850994.0},{"month":"2021-12","pu_hyper":null,"pu_mbc":null,"case_hyper":null,"case_mbc":null,"vol_unit":2407194.0,"vol_case":15858024.0},{"month":"2022-01","pu_hyper":6231598.0,"pu_mbc":7680598.0,"case_hyper":1229509.0,"case_mbc":1144811.0,"vol_unit":1857808.0,"vol_case":12054388.0},{"month":"2022-02","pu_hyper":4883006.0,"pu_mbc":6941019.0,"case_hyper":975821.0,"case_mbc":1122406.0,"vol_unit":1613959.0,"vol_case":10210066.0},{"month":"2022-03","pu_hyper":5628060.0,"pu_mbc":8099216.0,"case_hyper":1148521.0,"case_mbc":1120508.0,"vol_unit":1709030.0,"vol_case":12018246.0},{"month":"2022-04","pu_hyper":5553278.0,"pu_mbc":8016970.0,"case_hyper":1072001.0,"case_mbc":1043730.0,"vol_unit":1684466.0,"vol_case":11885782.0},{"month":"2022-05","pu_hyper":5521964.0,"pu_mbc":8111334.0,"case_hyper":1058998.0,"case_mbc":1124090.0,"vol_unit":1683081.0,"vol_case":11950217.0},{"month":"2022-06","pu_hyper":5296064.0,"pu_mbc":8110359.0,"case_hyper":1028299.0,"case_mbc":1104836.0,"vol_unit":1646422.0,"vol_case":11760001.0},{"month":"2022-07","pu_hyper":5621507.0,"pu_mbc":8632909.0,"case_hyper":1078466.0,"case_mbc":1247910.0,"vol_unit":1799395.0,"vol_case":12455021.0},{"month":"2022-08","pu_hyper":5541041.0,"pu_mbc":8377253.0,"case_hyper":1047497.0,"case_mbc":1129530.0,"vol_unit":1721536.0,"vol_case":12196758.0},{"month":"2022-09","pu_hyper":5226366.0,"pu_mbc":8162532.0,"case_hyper":1017438.0,"case_mbc":1100703.0,"vol_unit":1596853.0,"vol_case":11792045.0},{"month":"2022-10","pu_hyper":5430887.0,"pu_mbc":7881453.0,"case_hyper":1025758.0,"case_mbc":1062879.0,"vol_unit":1566540.0,"vol_case":11745800.0},{"month":"2022-11","pu_hyper":5273012.0,"pu_mbc":7862578.0,"case_hyper":1053548.0,"case_mbc":1039309.0,"vol_unit":1592651.0,"vol_case":11542939.0},{"month":"2022-12","pu_hyper":6382104.0,"pu_mbc":8386282.0,"case_hyper":1270221.0,"case_mbc":1085886.0,"vol_unit":1907384.0,"vol_case":12861002.0},{"month":"2023-01","pu_hyper":5451602.0,"pu_mbc":7277506.0,"case_hyper":1048412.0,"case_mbc":1029078.0,"vol_unit":2083837.0,"vol_case":10645271.0},{"month":"2023-02","pu_hyper":4871911.0,"pu_mbc":6647644.0,"case_hyper":905897.0,"case_mbc":893514.0,"vol_unit":1716220.0,"vol_case":9803335.0},{"month":"2023-03","pu_hyper":5491931.0,"pu_mbc":7422586.0,"case_hyper":1040744.0,"case_mbc":1007896.0,"vol_unit":1926661.0,"vol_case":10987856.0},{"month":"2023-04","pu_hyper":5553278.0,"pu_mbc":8016970.0,"case_hyper":1072001.0,"case_mbc":1043730.0,"vol_unit":1684466.0,"vol_case":11885782.0},{"month":"2023-05","pu_hyper":5179155.0,"pu_mbc":7937268.0,"case_hyper":1012078.0,"case_mbc":1071898.0,"vol_unit":2016794.0,"vol_case":11099629.0},{"month":"2023-06","pu_hyper":5141683.0,"pu_mbc":7574081.0,"case_hyper":987893.0,"case_mbc":1016313.0,"vol_unit":1972209.0,"vol_case":10743555.0},{"month":"2023-07","pu_hyper":5327906.0,"pu_mbc":8146052.0,"case_hyper":972397.0,"case_mbc":1091496.0,"vol_unit":2023271.0,"vol_case":11450687.0},{"month":"2023-08","pu_hyper":5898858.0,"pu_mbc":7842680.0,"case_hyper":1111418.0,"case_mbc":1106043.0,"vol_unit":2221039.0,"vol_case":11520499.0},{"month":"2023-09","pu_hyper":5048040.0,"pu_mbc":7917001.0,"case_hyper":930954.0,"case_mbc":984227.0,"vol_unit":1969039.0,"vol_case":10996002.0},{"month":"2023-10","pu_hyper":5273057.0,"pu_mbc":8235844.0,"case_hyper":1014878.0,"case_mbc":1115581.0,"vol_unit":2168164.0,"vol_case":11340737.0},{"month":"2023-11","pu_hyper":5269723.0,"pu_mbc":7967503.0,"case_hyper":1059637.0,"case_mbc":1164098.0,"vol_unit":2228536.0,"vol_case":10998796.0},{"month":"2023-12","pu_hyper":5821316.0,"pu_mbc":9781410.0,"case_hyper":1208001.0,"case_mbc":1311412.0,"vol_unit":2113899.0,"vol_case":13371551.0},{"month":"2024-01","pu_hyper":5395639.0,"pu_mbc":7890268.0,"case_hyper":1049571.0,"case_mbc":1033664.0,"vol_unit":2132092.0,"vol_case":11129418.0},{"month":"2024-02","pu_hyper":5025443.0,"pu_mbc":7983827.0,"case_hyper":983817.0,"case_mbc":1021635.0,"vol_unit":1874484.0,"vol_case":11134784.0},{"month":"2024-03","pu_hyper":5012963.0,"pu_mbc":8676062.0,"case_hyper":963965.0,"case_mbc":1109178.0,"vol_unit":2057286.0,"vol_case":11631739.0},{"month":"2024-04","pu_hyper":5087946.0,"pu_mbc":8952615.0,"case_hyper":1021465.0,"case_mbc":1138626.0,"vol_unit":2119397.0,"vol_case":11921164.0},{"month":"2024-05","pu_hyper":5068735.0,"pu_mbc":9110701.0,"case_hyper":1034823.0,"case_mbc":1185926.0,"vol_unit":2065491.0,"vol_case":12113945.0},{"month":"2024-06","pu_hyper":4836893.0,"pu_mbc":9017607.0,"case_hyper":967127.0,"case_mbc":1144734.0,"vol_unit":1868822.0,"vol_case":11985678.0},{"month":"2024-07","pu_hyper":5517379.0,"pu_mbc":9557914.0,"case_hyper":1125198.0,"case_mbc":1278533.0,"vol_unit":2147413.0,"vol_case":12927880.0},{"month":"2024-08","pu_hyper":5870431.0,"pu_mbc":9699416.0,"case_hyper":1200043.0,"case_mbc":1282749.0,"vol_unit":2159410.0,"vol_case":13410437.0},{"month":"2024-09","pu_hyper":5165499.0,"pu_mbc":9219820.0,"case_hyper":1065202.0,"case_mbc":1183735.0,"vol_unit":1907254.0,"vol_case":12478065.0},{"month":"2024-10","pu_hyper":5684523.0,"pu_mbc":9985118.0,"case_hyper":1225443.0,"case_mbc":1278572.0,"vol_unit":2184688.0,"vol_case":13475346.0},{"month":"2024-11","pu_hyper":5479197.0,"pu_mbc":9579161.0,"case_hyper":1153684.0,"case_mbc":1268174.0,"vol_unit":2106983.0,"vol_case":12951375.0},{"month":"2024-12","pu_hyper":5791210.0,"pu_mbc":10096541.0,"case_hyper":1309168.0,"case_mbc":1321912.0,"vol_unit":2331977.0,"vol_case":13555774.0},{"month":"2025-01","pu_hyper":5842855.0,"pu_mbc":9559785.0,"case_hyper":1296349.0,"case_mbc":1233733.0,"vol_unit":2271927.0,"vol_case":13130713.0},{"month":"2025-02","pu_hyper":4759129.0,"pu_mbc":9748851.0,"case_hyper":1053931.0,"case_mbc":1172773.0,"vol_unit":1854093.0,"vol_case":12653887.0},{"month":"2025-03","pu_hyper":5241811.0,"pu_mbc":10693428.0,"case_hyper":1177804.0,"case_mbc":1326509.0,"vol_unit":2041200.0,"vol_case":13894049.0},{"month":"2025-04","pu_hyper":5445404.0,"pu_mbc":10934292.0,"case_hyper":1176394.0,"case_mbc":1301197.0,"vol_unit":2030828.0,"vol_case":14348868.0},{"month":"2025-05","pu_hyper":3786007.0,"pu_mbc":12118230.0,"case_hyper":838396.0,"case_mbc":1660942.0,"vol_unit":1794435.0,"vol_case":14109802.0},{"month":"2025-06","pu_hyper":4988919.0,"pu_mbc":10177879.0,"case_hyper":1079021.0,"case_mbc":1184262.0,"vol_unit":2611597.0,"vol_case":12555201.0},{"month":"2025-07","pu_hyper":5511815.0,"pu_mbc":10632244.0,"case_hyper":1203384.0,"case_mbc":1308667.0,"vol_unit":2933648.0,"vol_case":13210411.0},{"month":"2025-08","pu_hyper":5210422.0,"pu_mbc":10142093.0,"case_hyper":1162060.0,"case_mbc":1225650.0,"vol_unit":2717470.0,"vol_case":12635045.0},{"month":"2025-09","pu_hyper":5267383.0,"pu_mbc":10957407.0,"case_hyper":1148435.0,"case_mbc":1309075.0,"vol_unit":2897872.0,"vol_case":13326918.0},{"month":"2025-10","pu_hyper":5937307.0,"pu_mbc":11294148.0,"case_hyper":1364016.0,"case_mbc":1392384.0,"vol_unit":3462612.0,"vol_case":13768843.0},{"month":"2025-11","pu_hyper":5375011.0,"pu_mbc":10070256.0,"case_hyper":1257390.0,"case_mbc":1196190.0,"vol_unit":4066798.0,"vol_case":12104424.0},{"month":"2025-12","pu_hyper":5879233.0,"pu_mbc":10067773.0,"case_hyper":1399326.0,"case_mbc":1254311.0,"vol_unit":4604111.0,"vol_case":12109188.0},{"month":"2026-01","pu_hyper":5846372.0,"pu_mbc":10381613.0,"case_hyper":1303804.0,"case_mbc":1278999.0,"vol_unit":4066180.0,"vol_case":12561830.0},{"month":"2026-02","pu_hyper":4997106.0,"pu_mbc":9710270.0,"case_hyper":1039193.0,"case_mbc":1302674.0,"vol_unit":3250894.0,"vol_case":11930724.0},{"month":"2026-03","pu_hyper":5280339.0,"pu_mbc":9686427.0,"case_hyper":1086405.0,"case_mbc":1207092.0,"vol_unit":3174724.0,"vol_case":12120011.0},{"month":"2026-04","pu_hyper":5096464.0,"pu_mbc":8557438.0,"case_hyper":1067057.0,"case_mbc":1041292.0,"vol_unit":2663264.0,"vol_case":10990638.0}];
+
+// STATE
+let yearFrom = 2019, yearTo = 2026, activeMetric = 'pu';
+let trendChart, shareChart, yoyChart, annualChart, mixChart;
+
+// UTILS
+const fmt = n => { if(!n&&n!==0) return 'N/A'; if(n>=1e9) return (n/1e9).toFixed(1)+'B'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(0)+'K'; return n.toFixed(0); };
+
+function getFiltered() {
+  return RAW.filter(d => { const y = +d.month.slice(0,4); return y >= yearFrom && y <= yearTo; });
+}
+
+function getMetricKeys() {
+  if(activeMetric==='pu')       return {a:'pu_hyper', b:'pu_mbc', labelA:'Hyper (PU)', labelB:'MBC (PU)'};
+  if(activeMetric==='case')     return {a:'case_hyper', b:'case_mbc', labelA:'Hyper (Case)', labelB:'MBC (Case)'};
+  return {a:'vol_unit', b:'vol_case', labelA:'Unit (PU)', labelB:'Case'};
+}
+
+function hasChannelData(data) {
+  return data.some(d => d.pu_hyper !== null);
+}
+
+function getThemeColors() {
+  const L = document.documentElement.classList.contains('light');
+  return {
+    tooltipBg: L?'#fff':'#1a2235', tooltipBorder: L?'#d1dce8':'#1e2d45',
+    tooltipTitle: L?'#64748b':'#94a3b8', tooltipBody: L?'#1e293b':'#e2e8f0',
+    gridColor: L?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.04)',
+    tickColor: L?'#94a3b8':'#64748b',
+  };
+}
+
+function getChartDefaults() {
+  const t = getThemeColors();
+  return {
+    responsive:true, maintainAspectRatio:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:t.tooltipBg,borderColor:t.tooltipBorder,borderWidth:1,titleColor:t.tooltipTitle,bodyColor:t.tooltipBody,padding:10,
+        callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fmt(ctx.raw)}`}}
+    },
+    scales:{
+      x:{grid:{color:t.gridColor},ticks:{color:t.tickColor,font:{size:10,family:'IBM Plex Mono'},maxRotation:45}},
+      y:{grid:{color:t.gridColor},ticks:{color:t.tickColor,font:{size:10,family:'IBM Plex Mono'},callback:v=>fmt(v)}}
+    }
+  };
+}
+
+let CD = {};
+
+function destroyAll() {
+  [trendChart,shareChart,yoyChart,annualChart,mixChart].forEach(c=>{if(c)c.destroy();});
+}
+
+// --- BUILD KPIs ---
+function buildKPIs(data) {
+  const k = getMetricKeys();
+  const isAll = (yearFrom===2019 && yearTo===2026);
+  const badge = (ch,lbl) => {
+    if(ch===null) return '';
+    const cls=ch>0?'up':ch<0?'down':'flat', arrow=ch>0?'▲':ch<0?'▼':'—';
+    return `<span class="kpi-change ${cls}">${arrow} ${Math.abs(ch*100).toFixed(1)}% ${lbl}</span>`;
+  };
+
+  if(isAll) {
+    const hVal=RAW.reduce((s,d)=>s+(d[k.a]||0),0), mVal=RAW.reduce((s,d)=>s+(d[k.b]||0),0);
+    const total=hVal+mVal, hShare=hVal/total;
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="kpi-card hyper"><div class="kpi-channel">⬡ Hyper</div><div class="kpi-label">${k.labelA} · ยอดรวมทั้งหมด</div><div class="kpi-value">${fmt(hVal)}</div><span class="kpi-change flat">2019-01 – 2026-04</span></div>
+      <div class="kpi-card mbc"><div class="kpi-channel">⬡ MBC</div><div class="kpi-label">${k.labelB} · ยอดรวมทั้งหมด</div><div class="kpi-value">${fmt(mVal)}</div><span class="kpi-change flat">2019-01 – 2026-04</span></div>
+      <div class="kpi-card total"><div class="kpi-channel">∑ Total</div><div class="kpi-label">Combined · ยอดรวมทั้งหมด</div><div class="kpi-value">${fmt(total)}</div><span class="kpi-change flat">${RAW.length} เดือน</span></div>
+      <div class="kpi-card ratio"><div class="kpi-channel">⇌ Share</div><div class="kpi-label">Hyper % of Total (รวม)</div><div class="kpi-value">${(hShare*100).toFixed(1)}%</div><span class="kpi-change flat">MBC: ${((1-hShare)*100).toFixed(1)}%</span></div>`;
+  } else {
+    const hVal=data.reduce((s,d)=>s+(d[k.a]||0),0), mVal=data.reduce((s,d)=>s+(d[k.b]||0),0);
+    const total=hVal+mVal, hShare=hVal/total;
+    const latest=data[data.length-1], prev=data[data.length-2]||null;
+    const lH=latest[k.a]||0, lM=latest[k.b]||0, lT=lH+lM;
+    const chH=prev&&prev[k.a]?(lH-prev[k.a])/prev[k.a]:null;
+    const chM=prev&&prev[k.b]?(lM-prev[k.b])/prev[k.b]:null;
+    const chT=(prev&&prev[k.a]&&prev[k.b])?(lT-(prev[k.a]+prev[k.b]))/(prev[k.a]+prev[k.b]):null;
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="kpi-card hyper"><div class="kpi-channel">⬡ Hyper</div><div class="kpi-label">${k.labelA} · ยอดรวม ${yearFrom}–${yearTo}</div><div class="kpi-value">${fmt(hVal)}</div>${badge(chH,'MoM')}</div>
+      <div class="kpi-card mbc"><div class="kpi-channel">⬡ MBC</div><div class="kpi-label">${k.labelB} · ยอดรวม ${yearFrom}–${yearTo}</div><div class="kpi-value">${fmt(mVal)}</div>${badge(chM,'MoM')}</div>
+      <div class="kpi-card total"><div class="kpi-channel">∑ Total</div><div class="kpi-label">Combined · ยอดรวม ${yearFrom}–${yearTo}</div><div class="kpi-value">${fmt(total)}</div>${badge(chT,'MoM')}</div>
+      <div class="kpi-card ratio"><div class="kpi-channel">⇌ Share</div><div class="kpi-label">Hyper % of Total</div><div class="kpi-value">${total>0?(hShare*100).toFixed(1)+'%':'N/A'}</div><span class="kpi-change flat">MBC: ${total>0?((1-hShare)*100).toFixed(1)+'%':'N/A'}</span></div>`;
+  }
+}
+
+// --- TREND ---
+function buildTrend(data) {
+  const k = getMetricKeys();
+  const labels = data.map(d=>d.month.slice(2));
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  const gradH=ctx.createLinearGradient(0,0,0,240); gradH.addColorStop(0,'rgba(0,212,255,0.25)'); gradH.addColorStop(1,'rgba(0,212,255,0)');
+  const gradM=ctx.createLinearGradient(0,0,0,240); gradM.addColorStop(0,'rgba(255,107,53,0.25)'); gradM.addColorStop(1,'rgba(255,107,53,0)');
+  const hasD = hasChannelData(data);
+  const datasets = hasD ? [
+    {label:k.labelA,data:data.map(d=>d[k.a]),borderColor:'#00d4ff',backgroundColor:gradH,borderWidth:2,pointRadius:1.5,fill:true,tension:0.3},
+    {label:k.labelB,data:data.map(d=>d[k.b]),borderColor:'#ff6b35',backgroundColor:gradM,borderWidth:2,pointRadius:1.5,fill:true,tension:0.3}
+  ] : [
+    {label:k.labelA,data:data.map(d=>d.vol_unit),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.1)',borderWidth:2,pointRadius:1.5,fill:true,tension:0.3},
+    {label:k.labelB,data:data.map(d=>d.vol_case),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',borderWidth:2,pointRadius:1.5,fill:true,tension:0.3}
+  ];
+  trendChart = new Chart(ctx, {type:'line',data:{labels,datasets},options:{...CD,scales:{...CD.scales,y:{...CD.scales.y,beginAtZero:false}}}});
+  document.getElementById('trendSub').textContent = `${data[0]?.month} – ${data[data.length-1]?.month} · ${data.length} เดือน`;
+  document.getElementById('trendLegend').innerHTML = datasets.map(d=>`<div class="legend-item"><div class="legend-dot" style="background:${d.borderColor}"></div>${d.label}</div>`).join('');
+}
+
+// --- SHARE (stacked %) ---
+function buildShare(data) {
+  const k = getMetricKeys();
+  const hasCh = hasChannelData(data);
+  if(!hasCh) { document.getElementById('shareChart').parentElement.querySelector('.panel-sub').textContent='ไม่มีข้อมูล Hyper/MBC ในช่วงนี้'; document.getElementById('shareChart').style.display='none'; return; }
+  document.getElementById('shareChart').style.display='';
+  const labels=data.filter(d=>d[k.a]).map(d=>d.month.slice(2));
+  const filtered=data.filter(d=>d[k.a]);
+  const hS=filtered.map(d=>{const t=d[k.a]+d[k.b];return+(d[k.a]/t*100).toFixed(1);});
+  const mS=filtered.map(d=>{const t=d[k.a]+d[k.b];return+(d[k.b]/t*100).toFixed(1);});
+  const ctx=document.getElementById('shareChart').getContext('2d');
+  shareChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:k.labelA,data:hS,backgroundColor:'rgba(0,212,255,0.7)',borderRadius:2},{label:k.labelB,data:mS,backgroundColor:'rgba(255,107,53,0.7)',borderRadius:2}]},
+    options:{...CD,plugins:{...CD.plugins,tooltip:{...CD.plugins.tooltip,callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`}}},
+      scales:{...CD.scales,x:{...CD.scales.x,stacked:true},y:{...CD.scales.y,stacked:true,max:100,ticks:{...CD.scales.y.ticks,callback:v=>v+'%'}}}}});
+}
+
+// --- YoY ---
+function buildYoY(data) {
+  const k = getMetricKeys();
+  const hasCh = hasChannelData(data);
+  if(!hasCh) { document.getElementById('yoyChart').style.display='none'; return; }
+  document.getElementById('yoyChart').style.display='';
+  const yoyRows=[], yoyLabels=[];
+  data.forEach(d=>{
+    const [yr,mo]=d.month.split('-');
+    const prev=RAW.find(x=>x.month===`${+yr-1}-${mo}`);
+    if(!prev||!d[k.a]||!prev[k.a]) return;
+    const cur=d[k.a]+d[k.b], pv=prev[k.a]+prev[k.b];
+    yoyRows.push(+((cur-pv)/pv*100).toFixed(1));
+    yoyLabels.push(d.month.slice(2));
+  });
+  const ctx=document.getElementById('yoyChart').getContext('2d');
+  yoyChart=new Chart(ctx,{type:'bar',data:{labels:yoyLabels,datasets:[{label:'YoY %',data:yoyRows,backgroundColor:yoyRows.map(v=>v>=0?'rgba(74,222,128,0.6)':'rgba(248,113,113,0.6)'),borderColor:yoyRows.map(v=>v>=0?'#4ade80':'#f87171'),borderWidth:1,borderRadius:2}]},
+    options:{...CD,plugins:{...CD.plugins,tooltip:{...CD.plugins.tooltip,callbacks:{label:ctx=>` YoY: ${ctx.raw>0?'+':''}${ctx.raw}%`}}},
+      scales:{...CD.scales,y:{...CD.scales.y,ticks:{...CD.scales.y.ticks,callback:v=>v+'%'}}}}});
+}
+
+// --- ANNUAL ---
+function buildAnnual(data) {
+  const k = getMetricKeys();
+  const years=[];
+  for(let y=yearFrom;y<=yearTo;y++) years.push(String(y));
+  const hasCh=hasChannelData(data);
+  const hTot=years.map(yr=>data.filter(d=>d.month.startsWith(yr)).reduce((s,d)=>s+(d[k.a]||0),0));
+  const mTot=years.map(yr=>data.filter(d=>d.month.startsWith(yr)).reduce((s,d)=>s+(d[k.b]||0),0));
+  const ctx=document.getElementById('annualChart').getContext('2d');
+  const ds = hasCh ? [
+    {label:k.labelA,data:hTot,backgroundColor:'rgba(0,212,255,0.6)',borderColor:'#00d4ff',borderWidth:1,borderRadius:4},
+    {label:k.labelB,data:mTot,backgroundColor:'rgba(255,107,53,0.6)',borderColor:'#ff6b35',borderWidth:1,borderRadius:4}
+  ] : [{label:'Total',data:years.map(yr=>data.filter(d=>d.month.startsWith(yr)).reduce((s,d)=>s+(d.vol_unit||0)+(d.vol_case||0),0)),backgroundColor:'rgba(124,58,237,0.6)',borderColor:'#7c3aed',borderWidth:1,borderRadius:4}];
+  annualChart=new Chart(ctx,{type:'bar',data:{labels:years,datasets:ds},options:{...CD,scales:{...CD.scales,y:{...CD.scales.y,beginAtZero:true}}}});
+}
+
+// --- MIX ---
+function buildMix(data) {
+  const labels=data.map(d=>d.month.slice(2));
+  const ctx=document.getElementById('mixChart').getContext('2d');
+  mixChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Unit (PU)',data:data.map(d=>d.vol_unit),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.08)',borderWidth:2,pointRadius:1.5,fill:true,tension:0.3},
+    {label:'Case',data:data.map(d=>d.vol_case),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.06)',borderWidth:2,pointRadius:1.5,fill:true,tension:0.3}
+  ]},options:{...CD,scales:{...CD.scales,y:{...CD.scales.y,beginAtZero:false}}}});
+}
+
+// --- SHARE BARS ---
+function buildShareBars(data) {
+  const years=[];
+  for(let y=yearFrom;y<=yearTo;y++) years.push(String(y));
+  const rows=years.filter(yr=>data.filter(d=>d.month.startsWith(yr)).some(d=>d.pu_hyper));
+  if(!rows.length){document.getElementById('shareBars').innerHTML='<div class="no-data">ไม่มีข้อมูล Hyper/MBC ในช่วงที่เลือก</div>';return;}
+  document.getElementById('shareBars').innerHTML=rows.map(yr=>{
+    const yd=data.filter(d=>d.month.startsWith(yr));
+    const h=yd.reduce((s,d)=>s+(d.pu_hyper||0),0), m=yd.reduce((s,d)=>s+(d.pu_mbc||0),0), t=h+m;
+    const hp=(h/t*100).toFixed(1), mp=(m/t*100).toFixed(1);
+    return `<div class="share-row"><div class="share-label">${yr}</div><div class="share-track"><div class="share-fill-h" style="width:${hp}%"></div><div class="share-fill-m" style="left:${hp}%;width:${mp}%"></div></div><span class="share-pct h">${hp}%</span><span style="color:var(--muted);font-size:11px;">/</span><span class="share-pct m">${mp}%</span></div>`;
+  }).join('');
+}
+
+// --- INSIGHTS ---
+function buildInsights(data) {
+  const hasCh=hasChannelData(data);
+  const r2025=RAW.filter(d=>d.month.startsWith('2025'));
+  const h25=r2025.reduce((s,d)=>s+(d.pu_hyper||0),0), m25=r2025.reduce((s,d)=>s+(d.pu_mbc||0),0);
+  const mbcShare25=(m25/(h25+m25)*100).toFixed(1);
+  const r2026=RAW.filter(d=>d.month.startsWith('2026'));
+  const h26=r2026.reduce((s,d)=>s+(d.pu_hyper||0),0), m26=r2026.reduce((s,d)=>s+(d.pu_mbc||0),0);
+  const mbcShare26=(m26/(h26+m26)*100).toFixed(1);
+  const tot25=r2025.reduce((s,d)=>s+(d.pu_hyper||0)+(d.pu_mbc||0),0);
+  const tot24=RAW.filter(d=>d.month.startsWith('2024')).reduce((s,d)=>s+(d.pu_hyper||0)+(d.pu_mbc||0),0);
+  const yoy2526=((tot25-tot24)/tot24*100).toFixed(1);
+  const rangeMonths=data.length;
+  document.getElementById('insightsGrid').innerHTML=`
+    <div class="insight-card warn"><div class="insight-icon">📈</div><div class="insight-title">MBC ครองสัดส่วนสูงต่อเนื่อง</div><div class="insight-body">ปี 2025 MBC = <strong>${mbcShare25}%</strong> | ปี 2026 YTD = <strong>${mbcShare26}%</strong> — Structural shift ชัดเจน</div></div>
+    <div class="insight-card"><div class="insight-icon">⚠️</div><div class="insight-title">Hyper Volume ทรงตัว</div><div class="insight-body">ปัจจุบัน Hyper อยู่ที่ ~37% ของ Total PU เทียบกับ ~45% ในปี 2022 — Channel rebalancing ที่ควรติดตาม</div></div>
+    <div class="insight-card good"><div class="insight-icon">✅</div><div class="insight-title">Total Volume 2025 vs 2024</div><div class="insight-body">YoY 2025 vs 2024: <strong>${yoy2526>0?'+':''}${yoy2526}%</strong> — ขับเคลื่อนหลักโดย MBC ที่ขยายตัวทุกไตรมาส</div></div>
+    <div class="insight-card"><div class="insight-icon">🔍</div><div class="insight-title">ช่วงที่เลือก: ${yearFrom}–${yearTo}</div><div class="insight-body"><strong>${rangeMonths} เดือน</strong> | ${hasCh?'มีข้อมูล Hyper/MBC ครบถ้วน':'ปี 2019–2021 มีเฉพาะ Unit Type (ไม่มี Hyper/MBC)'}</div></div>`;
+}
+
+// --- NOTICE ---
+function updateNotice(data) {
+  const banner=document.getElementById('noticeBanner');
+  const hasCh=hasChannelData(data);
+  const noChMonths=data.filter(d=>!d.pu_hyper).length;
+  if(!hasCh||noChMonths>0){
+    document.getElementById('noticeText').textContent=`ช่วงปี ${yearFrom}–${yearTo} มี ${noChMonths} เดือน (ปี 2019–2021) ที่ไม่มีข้อมูล Hyper/MBC — แสดงเฉพาะ Unit Type ในช่วงนั้น`;
+    banner.classList.add('show');
+  } else { banner.classList.remove('show'); }
+}
+
+// --- RENDER ---
+function render() {
+  CD = getChartDefaults();
+  destroyAll();
+  const data = getFiltered();
+  buildKPIs(data);
+  buildTrend(data);
+  buildShare(data);
+  buildYoY(data);
+  buildAnnual(data);
+  buildMix(data);
+  buildShareBars(data);
+  buildInsights(data);
+  updateNotice(data);
+}
+
+// --- YEAR RANGE SLIDER ---
+const YEARS = ALL_YEARS;
+const sliderFrom = document.getElementById('sliderFrom');
+const sliderTo   = document.getElementById('sliderTo');
+const trackFill  = document.getElementById('trackFill');
+const labelFrom  = document.getElementById('labelFrom');
+const labelTo    = document.getElementById('labelTo');
+
+function updateSliderUI() {
+  const total = YEARS.length - 1;
+  const fromPct = (+sliderFrom.value / total) * 100;
+  const toPct   = (+sliderTo.value   / total) * 100;
+  trackFill.style.left  = fromPct + '%';
+  trackFill.style.width = (toPct - fromPct) + '%';
+  labelFrom.textContent = YEARS[+sliderFrom.value];
+  labelTo.textContent   = YEARS[+sliderTo.value];
+}
+
+function onSliderChange() {
+  let f = +sliderFrom.value, t = +sliderTo.value;
+  if(f > t) { if(this===sliderFrom) sliderFrom.value=t; else sliderTo.value=f; f=+sliderFrom.value; t=+sliderTo.value; }
+  yearFrom = YEARS[f]; yearTo = YEARS[t];
+  updateSliderUI();
+  // clear preset active
+  document.querySelectorAll('.preset-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.from==yearFrom && b.dataset.to==yearTo);
+  });
+  render();
+}
+
+sliderFrom.addEventListener('input', onSliderChange);
+sliderTo.addEventListener('input', onSliderChange);
+
+// --- PRESETS ---
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    yearFrom=+btn.dataset.from; yearTo=+btn.dataset.to;
+    sliderFrom.value = YEARS.indexOf(yearFrom);
+    sliderTo.value   = YEARS.indexOf(yearTo);
+    updateSliderUI();
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+// --- METRIC ---
+document.querySelectorAll('.metric-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.metric-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeMetric = btn.dataset.metric;
+    render();
+  });
+});
+
+// --- THEME ---
+function setTheme(theme) {
+  const root=document.documentElement;
+  if(theme==='light'){ root.classList.add('light'); document.getElementById('btnDark').classList.remove('active'); document.getElementById('btnLight').classList.add('active'); }
+  else{ root.classList.remove('light'); document.getElementById('btnDark').classList.add('active'); document.getElementById('btnLight').classList.remove('active'); }
+  render();
+}
+
+// INIT
+updateSliderUI();
+render();
+</script>
+</body>
+</html>
